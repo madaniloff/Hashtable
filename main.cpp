@@ -37,69 +37,72 @@ void delStudent(Student **arr, int inid, int size);
 int main() {
   int size = 100;
   int inid;
+  int num;
   srand(time(NULL));
   Student** arr = new Student*[100];
   bool running = true;
   while (running == true) {
     char input[7];
-    cout <<  "Enter ADD, PRINT, DELETE  or QUIT:" << endl;
+    cout <<  "Enter ADD, PRINT, DELETE, GEN or QUIT:" << endl;
     cin.get(input, 7);
     cin.ignore();
     //ADD
     if (strcmp(input, "ADD") == 0) {
       char input2[9];
-      cout << "Enter ADD or GENERATE: " << endl;
-      cin.get(input2, 9);
+      Student* newStudent = new Student();
+      newStudent->prev = NULL;
+      newStudent->next = NULL;
+      //Prompt user to enter first name, last name, id, and gpa
+      cout << "First name: " << endl;
+      cin >> newStudent->fname;
       cin.ignore();
-      //MANUAL ADD
-      if (strcmp(input2, "ADD") == 0) {
-	Student* newStudent = new Student();
-	newStudent->prev = NULL;
-	newStudent->next = NULL;
-	//Prompt user to enter first name, last name, id, and gpa
-	cout << "First name: " << endl;
-	cin >> newStudent->fname;
-	cin.ignore();
-	cout << "Last name: " << endl;
-	cin >> newStudent->lname;
-	cin.ignore();
-	cout << "ID: " << endl;
-	cin >> newStudent->id;
-	cin.ignore();
-	cout << "GPA: " << endl;
-	cin >> newStudent->gpa;
-	cin.ignore();
-	//If there will be a collision with a chain of 3
-	if (checkCollision(arr, newStudent, size) == true) {
-	  //Double the size of hash table
-	  size = size * 2;
-	  //Create temp array
-	  Student* temp = newStudent();
-	  for (int i = 0; i < size/2; i++ ) {
-	    temp[i] = list[i];
-	  }
-	  //Resize arr and clear it
-	  temp = new Student*[size];
-	   for (int i = 0; i < size; i++ ) {
-	    list[i] = NULL;
-	  }
-	   //Readd students to new list
-	   
+      cout << "Last name: " << endl;
+      cin >> newStudent->lname;
+      cin.ignore();
+      cout << "ID: " << endl;
+      cin >> newStudent->id;
+      cin.ignore();
+      cout << "GPA: " << endl;
+      cin >> newStudent->gpa;
+      cin.ignore();
+      //If there will be a collision with a chain of 3
+      if (checkCollision(arr, newStudent, size) == true) {
+	cout << "Rehashing... " << endl;
+	//Double the size of hash table
+	size = size * 2;
+	//Create temp array
+	Student** temp = new Student*[size];
+	for (int i = 0; i < size/2; i++) {
+	  temp[i] = arr[i];
 	}
-	
-      
-	//Add all fields to hash function
-	addStudent(arr, newStudent, size);
-      }
-      //GENERATE
-      else if (strcmp(input2, "GENERATE") == 0) {
-	int num;
-	//Ask user how many students they want to generate
-	cout << "Enter amount of students to generate: " << endl;
-	cin >> num;
-	cin.ignore();
-	generateStudent(num);
-      }
+	//Resize arr and clear it
+	arr = new Student*[size];
+	for (int i = 0; i < size; i++) {
+	  arr[i] = NULL;
+	}
+	//Re-add students to new list
+	for (int i = 0; i < size; i++) {
+	  if (temp[i] != NULL) {
+	    Student* newTemp = temp[i];
+	    //If newTemp->next isnt NULL
+	    if (newTemp->next != NULL) {
+	      Student* tempNext = newTemp->next;
+	      //If newTemp->next->next isnt NULL
+	      if (tempNext->next != NULL) {
+		Student* tempNextNext = tempNext->next;
+		tempNextNext->next = NULL;
+		tempNextNext->prev = NULL;
+		addStudent(arr, tempNextNext, size);
+	      }
+	      tempNext->next = NULL;
+	      tempNext->prev = NULL;
+	    }
+	    addStudent(arr, newTemp, size);
+	  }	     
+	}
+      } 
+    //Add all fields to hash function
+    addStudent(arr, newStudent, size);
     }
     //PRINT
     else if (strcmp(input, "PRINT") == 0) {
@@ -111,6 +114,14 @@ int main() {
       cin >> inid;
       cin.ignore();
       delStudent(arr, inid, size);
+    }
+    //GENERATE
+    else if (strcmp(input, "GEN") == 0) {
+      cout << "Enter number of students to generate: " << endl;
+      cin >> num;
+      cin.ignore();
+      generateStudent(num);
+      
     }
     //QUIT
     else if (strcmp(input, "QUIT") == 0) {
@@ -137,7 +148,7 @@ void addStudent(Student **arr, Student* newStudent, int size) {
     //If next's next is NULL
     else if (arr[code]->next->next == NULL) {
       arr[code]->next->next = newStudent;
-      (arr[code)->next->next)->prev = arr[code]->next->next;
+      (arr[code]->next->next)->prev = arr[code]->next->next;
     }
   }
 }
@@ -145,13 +156,15 @@ void addStudent(Student **arr, Student* newStudent, int size) {
 //Check for collisions
 bool checkCollision(Student **arr, Student* newStudent, int size) {
   //Get code
-  int code = newStudent-> id % size;
+  int code = newStudent->id % size;
   //If that index already has three chains
-  if (arr[code]->next->next != NULL) {
-    return true;
-  }
-  else {
-    return false;
+  if (arr[code] != NULL && arr[code]->next != NULL) {
+    if (arr[code]->next->next != NULL) {
+      return true;
+    }
+    else {
+      return false;
+    }
   }
 }
 
@@ -187,10 +200,10 @@ void printStudent(Student **arr, int size) {
 	cout << "GPA: " << arr[i]->next->gpa << endl;
 	cout << "-------------------------" << endl;
 	if (arr[i]->next->next != NULL) {
-	  cout << "First name: " << arr[i]->next->fname << endl;
-	  cout << "Last name: " << arr[i]->next->lname << endl;
-	  cout << "ID: " << arr[i]->next->id << endl;
-	  cout << "GPA: " << arr[i]->next->gpa << endl;
+	  cout << "First name: " << arr[i]->next->next->fname << endl;
+	  cout << "Last name: " << arr[i]->next->next->lname << endl;
+	  cout << "ID: " << arr[i]->next->next->id << endl;
+	  cout << "GPA: " << arr[i]->next->next->gpa << endl;
 	  cout << "-------------------------" << endl;
 	}
       }
