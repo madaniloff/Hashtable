@@ -19,8 +19,8 @@ using namespace std;
 
 //Struct for student
 struct Student {
-  char fname[30];
-  char lname[30];
+  char* fname;
+  char* lname;
   int id;
   float gpa;
   Student *next;
@@ -30,11 +30,12 @@ struct Student {
 //Initialize functions
 void addStudent(Student **arr, Student* newStudent, int size);
 bool checkCollision(Student **arr, Student* newStudent, int size);
-void generateStudent(int num);
+void generateStudent(Student **arr, int num, int maxname, int size);
 void printStudent(Student **arr, int size);
 void delStudent(Student **arr, int inid, int size);
 
 int main() {
+  const int maxname = 21;
   int size = 100;
   int inid;
   int num;
@@ -48,16 +49,19 @@ int main() {
     cin.ignore();
     //ADD
     if (strcmp(input, "ADD") == 0) {
-      char input2[9];
+      char* first = new char[30];
+      char* last = new char[30];
       Student* newStudent = new Student();
       newStudent->prev = NULL;
       newStudent->next = NULL;
       //Prompt user to enter first name, last name, id, and gpa
       cout << "First name: " << endl;
-      cin >> newStudent->fname;
+      cin.get(first, 30);
+      newStudent->fname = first;
       cin.ignore();
       cout << "Last name: " << endl;
-      cin >> newStudent->lname;
+      cin.get(last, 30);
+      newStudent->lname = last;
       cin.ignore();
       cout << "ID: " << endl;
       cin >> newStudent->id;
@@ -120,7 +124,7 @@ int main() {
       cout << "Enter number of students to generate: " << endl;
       cin >> num;
       cin.ignore();
-      generateStudent(num);
+      generateStudent(arr, num, maxname, size);
       
     }
     //QUIT
@@ -169,18 +173,55 @@ bool checkCollision(Student **arr, Student* newStudent, int size) {
 }
 
 //Generates students
-void generateStudent(int num) {
-  //Open first name and last name files
-
-
-  //Generate random number between 0 and 20
-  int randF = rand() % 21;
-  int randL = rand() % 21;
+void generateStudent(Student** arr, int num, int maxname, int size) {
+  int randF;
+  int randL;
+  int randID;
+  float randGPA;
+  //Open name files
+  ifstream fnameFile;
+  ifstream lnameFile;
+  fnameFile.open("firstnames.txt");
+  lnameFile.open("lastnames.txt");
+  char* fname[20];
+  char* lname[20];
+  //Put names from file into char[][] array
+  int a = 0;
+  int b = 0;
+  while (a < 20) {
+    fname[a] = new char[maxname];
+    if (!fnameFile.getline(fname[a], maxname)) {
+      delete[] fname[a];
+      break;
+    }
+    ++a;
+  }
+  while (b < 20) {
+    lname[b] = new char[maxname];
+    if (!lnameFile.getline(lname[b], maxname)) {
+      delete[] lname[b];
+      break;
+    }
+    ++b;
+  }
+  //cout << fname[3] << endl;
+  //cout << lname[3] << endl;
   while (num > 0) {
-
+    //Generate random number between 0 and 20, and random id and gpa
+    randF = rand() % 21;
+    randL = rand() % 21;
+    randID = rand() % 1000000;
+    randGPA = (rand() % (500 - 100)) / 100.0;
+    Student* genStudent = new Student();
+    genStudent->fname = fname[randF];
+    genStudent->lname = lname[randL];
+    genStudent->id = randID;
+    genStudent->gpa = randGPA;
+    addStudent(arr, genStudent, size);
     num--;
   }
 }
+
 
 //Print out the students
 void printStudent(Student **arr, int size) {
@@ -241,16 +282,27 @@ void delStudent(Student **arr, int inid, int size) {
     if (arr[index]->next == NULL) {
       cout << "This student does not exist! " << endl;
     }
-    else {
-      //If the second chain's id matches
-      if (arr[index]->next->id == inid) {
-	//If it's next is NULL
-	if (arr[index]->next->next == NULL) {
-	  
-	}
+    //If the second chain's id matches
+    else if (arr[index]->next->id == inid) {
+      //If it's next is NULL
+      if (arr[index]->next->next == NULL) {
+	//Delete it
+	arr[index]->next = NULL;
+      }
+      //If it's next isn't NULL
+      else if (arr[index]->next->next != NULL) {
+	//Create temp value for next next and set it to arr[index]->next
+	Student* temp = arr[index]->next->next;
+	arr[index]->next->next = NULL;
+	arr[index]->next = NULL;
+	arr[index]->next = temp;
+	temp->prev = arr[index];
       }
     }
-  }
-  
-
+    //If the third chain's id matches
+    else if (arr[index]->next->next->id == inid) {
+      //Delete it
+      arr[index]->next->next = NULL;
+    }
+  } 
 }
